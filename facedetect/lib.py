@@ -165,7 +165,7 @@ class FaceDetector(object):
             roi = np.float32(roi) / 255
             yield self._mssim_norm(roi, template, **mssim_args)
 
-    def face_detect(self, im, biggest=False):
+    def detect(self, im, biggest=False):
         side = math.sqrt(im.size)
         minlen = int(side / 20)
         maxlen = int(side / 2)
@@ -181,10 +181,13 @@ class FaceDetector(object):
         return features
 
 
-    def face_detect_file(self, path, biggest=False):
+    def detect_from_file(self, path, biggest=False):
         im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         if im is None:
             self._fatal("cannot load input image {}".format(path))
         im = cv2.equalizeHist(im)
-        features = self.face_detect(im, biggest)
+        features = self.detect(im, biggest)
         return im, features
+
+    def detect_similar_faces(self, path, source_image):
+        pass

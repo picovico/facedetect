@@ -65,10 +65,9 @@ def __main__():
     if args.debug or args.best or args.biggest or sim_scores:
         scores, best = FD.debug_info(img_features, sim_scores=sim_scores)
 
-    print(scores, best)
-
     if args.output:
-        FD.output_to_file(img_features=img_features,
+        _img = cv2.imread(args.file) # If Grayscale is fine, no need to read again.
+        FD.output_to_file(img_features=(_img, features),
                           outfile=args.output,
                           best=best,
                           debug_scores=scores)

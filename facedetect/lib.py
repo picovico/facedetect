@@ -189,5 +189,67 @@ class FaceDetector(object):
         features = self.detect(im, biggest)
         return im, features
 
-    def detect_similar_faces(self, path, source_image):
-        pass
+    def detect_similar_faces(self, path, source_image, search_threshold=30, debug=False):
+        im, features = self.detect_from_file(path)
+        s_im, s_features = self.detect_from_file(source_image, True) # match against biggest file.
+        if len(s_features) == 0:
+            self._fatal("cannot detect face in source template")
+        sim_scores = []
+        sim_features = []
+        sim_threshold = search_threshold / 100
+        sim_template = self._norm_rect(s_im, s_features[0])
+        for i, score in enumerate(self._pairwise_similarity(im, features, sim_template)):
+            if score >= sim_threshold:
+                sim_scores.append(score)
+                sim_features.append(features[i])
+
+        return im, sim_features, sim_scores
+
+    def debug_info(self, img_features, sim_scores=None):
+        # compute scores
+        img, features = img_features
+        scores = []
+        best = None
+        if len(features):
+            scores, best = self._rank(img, features)
+            if sim_scores:
+                for i in range(len(features)):
+                    scores[i]['MSSIM'] = sim_scores[i]
+
+        return scores, best
+
+    def output_to_file(self, img_features, outfile, best=None, debug_scores=None):
+        img, features = img_features
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        font_height = cv2.getTextSize("", font, 0.5, 1)[0][1] + 5
+
+        white = (255, 255, 255)
+        yellow = (0, 255, 255)
+
+        def draw_rectangle(rect, line_color):
+            xy1 = (rect[0], rect[1])
+            xy2 = (rect[0] + rect[2], rect[1] + rect[3])
+            cv2.rectangle(img, xy1, xy2, (0, 0, 0), 4)
+            cv2.rectangle(img, xy1, xy2, line_color, 2)
+
+        def draw_debug(rect, rect_scores, line_color):
+            lines = []
+            for key, val in rect_scores.items():
+                lines.append("SCORE {}: {}".format(key, val))
+            height = rect[1] + rect[3] + font_height
+            for line in lines:
+                cv2.putText(img, line, (rect[0], height), font, 0.5, line_color, 1, cv2.LINE_AA)
+                height += font_height
+
+        for idx, rect in enumerate(features):
+            if best is not None and idx != best and not debug_scores:
+                continue
+
+            line_color = yellow if idx == best else white
+            draw_rectangle(rect, line_color)
+
+            if debug_scores:
+                draw_debug(rect, debug_scores[idx], line_color)
+
+        cv2.imwrite(outfile, img)
+

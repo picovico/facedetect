@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # facedetect: a simple face detector for batch processing
 # Copyright(c) 2013-2017 by wave++ "Yuri D'Elia" <wavexx@thregr.org>
 # Distributed under GPLv2+ (see COPYING) WITHOUT ANY WARRANTY.
@@ -13,111 +13,78 @@ import os
 
 from facedetect.lib import FaceDetector
 
+def get_center(rect):
+                x = int(rect[0] + rect[2] / 2)
+            y = int(rect[1] + rect[3] / 2)
+
 def __main__():
-    pass
-    # facedetector = FaceDetector()
-    # default_config = facedetector.get_config()
+    FD = FaceDetector()
+    default_config = FD.get_config()
 
-    # ap = argparse.ArgumentParser(description='A simple face detector for batch processing')
-    # ap.add_argument('--biggest', action="store_true",
-    #                 help='Extract only the biggest face')
-    # ap.add_argument('--best', action="store_true",
-    #                 help='Extract only the best matching face')
-    # ap.add_argument('-c', '--center', action="store_true",
-    #                 help='Print only the center coordinates')
-    # ap.add_argument('--data-dir', metavar='DIRECTORY', default=default_config['DATA_DIR'],
-    #                 help='OpenCV data files directory')
-    # ap.add_argument('-q', '--query', action="store_true",
-    #                 help='Query only (exit 0: face detected, 2: no detection)')
-    # ap.add_argument('-s', '--search', metavar='FILE',
-    #                 help='Search for faces similar to the one supplied in FILE')
-    # ap.add_argument('--search-threshold', metavar='PERCENT', type=int, default=30,
-    #                 help='Face similarity threshold (default: 30%%)')
-    # ap.add_argument('-o', '--output', help='Image output file')
-    # ap.add_argument('-d', '--debug', action="store_true",
-    #                 help='Add debugging metrics in the image output file')
-    # ap.add_argument('file', help='Input image file')
-    # args = ap.parse_args()
+    ap = argparse.ArgumentParser(description='A simple face detector for batch processing')
+    ap.add_argument('--biggest', action="store_true",
+                    help='Extract only the biggest face')
+    ap.add_argument('--best', action="store_true",
+                    help='Extract only the best matching face')
+    ap.add_argument('-c', '--center', action="store_true",
+                    help='Print only the center coordinates')
+    ap.add_argument('--data-dir', metavar='DIRECTORY', default=default_config['DATA_DIR'],
+                    help='OpenCV data files directory')
+    ap.add_argument('-q', '--query', action="store_true",
+                    help='Query only (exit 0: face detected, 2: no detection)')
+    ap.add_argument('-s', '--search', metavar='FILE',
+                    help='Search for faces similar to the one supplied in FILE')
+    ap.add_argument('--search-threshold', metavar='PERCENT', type=int, default=30,
+                    help='Face similarity threshold (default: 30%%)')
+    ap.add_argument('-o', '--output', help='Image output file')
+    ap.add_argument('-d', '--debug', action="store_true",
+                    help='Add debugging metrics in the image output file')
+    ap.add_argument('file', help='Input image file')
+    args = ap.parse_args()
 
-    # print(data_dir)
-    # import sys
-    # sys.exit()
+    if not os.path.isdir(args.data_dir):
+        FD._fatal("Invalid data directory")
 
-    # # detect faces in input image
-    # im, features = face_detect_file(args.file, args.query or args.biggest)
+    default_config['DATA_DIR'] = args.data_dir
 
-    # # match against the requested face
-    # sim_scores = None
-    # if args.search:
-    #     s_im, s_features = face_detect_file(args.search, True)
-    #     if len(s_features) == 0:
-    #         fatal("cannot detect face in template")
-    #     sim_scores = []
-    #     sim_features = []
-    #     sim_threshold = args.search_threshold / 100
-    #     sim_template = norm_rect(s_im, s_features[0])
-    #     for i, score in enumerate(pairwise_similarity(im, features, sim_template)):
-    #         if score >= sim_threshold:
-    #             sim_scores.append(score)
-    #             sim_features.append(features[i])
-    #     features = sim_features
+    # match against the requested face
+    sim_scores = None
+    scores = None
+    best=None
+    if args.search:
+        img, features, sim_scores = FD.detect_similar_faces(args.file, args.search, args.search_threshold)
+    else:
+        # detect faces in input image
+        img, features = FD.face_detect_file(args.file, args.query or args.biggest)
 
-    # # exit early if possible
-    # if args.query:
-    #     return 0 if len(features) else 2
+    # exit early if possible
+    if args.query:
+        return 0 if len(features) else 2
 
-    # # compute scores
-    # scores = []
-    # best = None
-    # if len(features) and (args.debug or args.best or args.biggest or sim_scores):
-    #     scores, best = rank(im, features)
-    #     if sim_scores:
-    #         for i in range(len(features)):
-    #             scores[i]['MSSIM'] = sim_scores[i]
+    img_features = (img, features)
 
-    # # debug features
-    # if args.output:
-    #     im = cv2.imread(args.file)
-    #     font = cv2.FONT_HERSHEY_SIMPLEX
-    #     fontHeight = cv2.getTextSize("", font, 0.5, 1)[0][1] + 5
+    if args.debug or args.best or args.biggest or sim_scores:
+        scores, best = FD.debug_info(img_features, sim_scores=sim_scores)
 
-    #     for i in range(len(features)):
-    #         if best is not None and i != best and not args.debug:
-    #             next
+    if args.output:
+        FD.output_to_file(img_features=img_features,
+                          outfile=args.file,
+                          best=best,
+                          debug_scores=scores)
 
-    #         rect = features[i]
-    #         fg = (0, 255, 255) if i == best else (255, 255, 255)
+    # output
+    if (args.best or args.biggest) and best is not None:
+        features = [features[best]]
 
-    #         xy1 = (rect[0], rect[1])
-    #         xy2 = (rect[0] + rect[2], rect[1] + rect[3])
-    #         cv2.rectangle(im, xy1, xy2, (0, 0, 0), 4)
-    #         cv2.rectangle(im, xy1, xy2, fg, 2)
+    if args.center:
+        for rect in features:
 
-    #         if args.debug:
-    #             lines = []
-    #             for k, v in scores[i].items():
-    #                 lines.append("{}: {}".format(k, v))
-    #             h = rect[1] + rect[3] + fontHeight
-    #             for line in lines:
-    #                 cv2.putText(im, line, (rect[0], h), font, 0.5, fg, 1, cv2.LINE_AA)
-    #                 h += fontHeight
+            print("{} {}".format(x, y))
+    else:
+        for rect in features:
+            print("{} {} {} {}".format(*rect))
 
-    #     cv2.imwrite(args.output, im)
-
-    # # output
-    # if (args.best or args.biggest) and best is not None:
-    #     features = [features[best]]
-
-    # if args.center:
-    #     for rect in features:
-    #         x = int(rect[0] + rect[2] / 2)
-    #         y = int(rect[1] + rect[3] / 2)
-    #         print("{} {}".format(x, y))
-    # else:
-    #     for rect in features:
-    #         print("{} {} {} {}".format(*rect))
-
-    # return 0
+    return 0
 
 
 if __name__ == '__main__':

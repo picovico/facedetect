@@ -59,12 +59,12 @@ class FaceDetector(object):
             cv2.putText = _putText
 
     # Support functions
-    def _error(self, msg):
+    def error(self, msg):
         sys.stderr.write("{}: error: {}\n".format(os.path.basename(sys.argv[0]), msg))
 
 
-    def _fatal(self, msg):
-        self._error(msg)
+    def fatal(self, msg):
+        self.error(msg)
         sys.exit(1)
 
 
@@ -76,7 +76,7 @@ class FaceDetector(object):
                     raise cv2.error('no such file')
                 self._configuration['CASCADES'][k] = cv2.CascadeClassifier(v)
             except cv2.error:
-                self._fatal("cannot load {} from {}".format(k, v))
+                self.fatal("cannot load {} from {}".format(k, v))
 
 
     def _crop_rect(self, im, rect, shave=0):
@@ -184,7 +184,7 @@ class FaceDetector(object):
     def detect_from_file(self, path, biggest=False):
         im = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         if im is None:
-            self._fatal("cannot load input image {}".format(path))
+            self.fatal("cannot load input image {}".format(path))
         im = cv2.equalizeHist(im)
         features = self.detect(im, biggest)
         return im, features
@@ -193,7 +193,7 @@ class FaceDetector(object):
         im, features = self.detect_from_file(path)
         s_im, s_features = self.detect_from_file(source_image, True) # match against biggest file.
         if len(s_features) == 0:
-            self._fatal("cannot detect face in source template")
+            self.fatal("cannot detect face in source template")
         sim_scores = []
         sim_features = []
         sim_threshold = search_threshold / 100
@@ -252,4 +252,9 @@ class FaceDetector(object):
                 draw_debug(rect, debug_scores[idx], line_color)
 
         cv2.imwrite(outfile, img)
+
+    def get_center(self, rect):
+        x = int(rect[0] + rect[2] / 2)
+        y = int(rect[1] + rect[3] / 2)
+        return x, y
 

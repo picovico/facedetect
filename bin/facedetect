@@ -13,49 +13,48 @@ import os
 
 from facedetect.lib import FaceDetector
 
-def get_center(rect):
-                x = int(rect[0] + rect[2] / 2)
-            y = int(rect[1] + rect[3] / 2)
-
 def __main__():
     FD = FaceDetector()
     default_config = FD.get_config()
 
-    ap = argparse.ArgumentParser(description='A simple face detector for batch processing')
-    ap.add_argument('--biggest', action="store_true",
-                    help='Extract only the biggest face')
-    ap.add_argument('--best', action="store_true",
-                    help='Extract only the best matching face')
-    ap.add_argument('-c', '--center', action="store_true",
-                    help='Print only the center coordinates')
-    ap.add_argument('--data-dir', metavar='DIRECTORY', default=default_config['DATA_DIR'],
-                    help='OpenCV data files directory')
-    ap.add_argument('-q', '--query', action="store_true",
-                    help='Query only (exit 0: face detected, 2: no detection)')
-    ap.add_argument('-s', '--search', metavar='FILE',
-                    help='Search for faces similar to the one supplied in FILE')
-    ap.add_argument('--search-threshold', metavar='PERCENT', type=int, default=30,
-                    help='Face similarity threshold (default: 30%%)')
-    ap.add_argument('-o', '--output', help='Image output file')
-    ap.add_argument('-d', '--debug', action="store_true",
-                    help='Add debugging metrics in the image output file')
-    ap.add_argument('file', help='Input image file')
-    args = ap.parse_args()
+    aparser = argparse.ArgumentParser(description='A simple face detector for batch processing')
+    aparser.add_argument('--biggest', action="store_true",
+                         help='Extract only the biggest face')
+    aparser.add_argument('--best', action="store_true",
+                         help='Extract only the best matching face')
+    aparser.add_argument('-c', '--center', action="store_true",
+                         help='Print only the center coordinates')
+    aparser.add_argument('--data-dir', metavar='DIRECTORY', default=default_config['DATA_DIR'],
+                         help='OpenCV data files directory')
+    aparser.add_argument('-q', '--query', action="store_true",
+                         help='Query only (exit 0: face detected, 2: no detection)')
+    aparser.add_argument('-s', '--search', metavar='FILE',
+                         help='Search for faces similar to the one supplied in FILE')
+    aparser.add_argument('--search-threshold', metavar='PERCENT', type=int, default=30,
+                         help='Face similarity threshold (default: 30%%)')
+    aparser.add_argument('-o', '--output', help='Image output file')
+    aparser.add_argument('-d', '--debug', action="store_true",
+                         help='Add debugging metrics in the image output file')
+    aparser.add_argument('file', help='Input image file')
+    args = aparser.parse_args()
 
     if not os.path.isdir(args.data_dir):
-        FD._fatal("Invalid data directory")
+        FD.fatal("Invalid data directory")
 
     default_config['DATA_DIR'] = args.data_dir
+    FD.configure()
 
     # match against the requested face
     sim_scores = None
     scores = None
-    best=None
+    best = None
     if args.search:
-        img, features, sim_scores = FD.detect_similar_faces(args.file, args.search, args.search_threshold)
+        img, features, sim_scores = FD.detect_similar_faces(args.file,
+                                                            args.search,
+                                                            args.search_threshold)
     else:
         # detect faces in input image
-        img, features = FD.face_detect_file(args.file, args.query or args.biggest)
+        img, features = FD.detect_from_file(args.file, args.query or args.biggest)
 
     # exit early if possible
     if args.query:
@@ -66,9 +65,11 @@ def __main__():
     if args.debug or args.best or args.biggest or sim_scores:
         scores, best = FD.debug_info(img_features, sim_scores=sim_scores)
 
+    print(scores, best)
+
     if args.output:
         FD.output_to_file(img_features=img_features,
-                          outfile=args.file,
+                          outfile=args.output,
                           best=best,
                           debug_scores=scores)
 
@@ -78,8 +79,8 @@ def __main__():
 
     if args.center:
         for rect in features:
-
-            print("{} {}".format(x, y))
+            ctx, cty = FD.get_center(rect)
+            print("{} {}".format(ctx, cty))
     else:
         for rect in features:
             print("{} {} {} {}".format(*rect))

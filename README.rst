@@ -18,29 +18,34 @@ Basic Usage
 
 By default `facedetect` outputs the rectangles of all the detected faces::
 
-  ./facedetect path/to/image.jpg
+  ./bin/facedetect path/to/input.jpg
   289 139 56 56
   295 283 55 55
 
-The output values are the X Y coordinates (from the top-left corner),
+  Output : 
+  X, Y, Width Height
+  X1, Y1, Width1, Height1
+  ...
+
+The output values are the X Y coordinates **(from the top-left corner)**,
 followed by width and height. For debugging, you can examine the face positions
 directly overlaid on the source image using the ``-o`` flag::
 
-  ./facedetect -o test.jpg path/to/image.jpg
+  ./bin/facedetect -o outfile.jpg path/to/input.jpg
 
 To simply check if an image contains a face, use the ``-q`` switch and check
 the exit status::
 
-  ./facedetect -q path/to/image.jpg
+  ./bin/facedetect -q path/to/input.jpg
   echo $?
 
-An exit status of 0 indicates the presence of at least one face. An exit status
+An exit status of **0 indicates the presence of at least one face**. An exit status
 of 2 means that no face could be detected (1 is reserved for failures).
 
 The ``--center`` flag also exists for scripting convenience, and simply outputs
 the X Y coordinates of face centers::
 
-  ./facedetect --center path/to/image.jpg
+  ./bin/facedetect --center path/to/image.jpg
   317 167
   322 310
 
@@ -69,7 +74,7 @@ and "people" directories using the exit code::
 
   for file in path/to/pictures/*.jpg; do
     name=$(basename "$file")
-    if facedetect -q "$file"; then
+    if ./bin/facedetect -q "$file"; then
       mv "$file" "path/to/people/$name"
     else
       mv "$file" "path/to/landscape/$name"
@@ -85,7 +90,7 @@ faces in all the source images using `mogrify` (from ImageMagick_)::
     name=$(basename "$file")
     out="path/to/blurred/$name"
     cp "$file" "$out"
-    facedetect "$file" | while read x y w h; do
+    ./bin/facedetect "$file" | while read x y w h; do
       mogrify -gravity NorthWest -region "${w}x${h}+${x}+${y}" \
 	-scale '10%' -scale '1000%' "$out"
     done
@@ -102,7 +107,7 @@ face in each source image ``img.jpg`` to a separated image ``img_N.jpg``::
   for file in path/to/pictures/*.jpg; do
     name=$(basename "$file")
     i=0
-    facedetect "$file" | while read x y w h; do
+    ./bin/facedetect "$file" | while read x y w h; do
       convert "$file" -crop ${w}x${h}+${x}+${y} "path/to/faces/${name%.*}_${i}.${name##*.}"
       i=$(($i+1))
     done
@@ -142,11 +147,14 @@ On Debian/Ubuntu, you can install all the required dependencies with::
 
 and then install `facedetect` with::
 
-  sudo cp facedetect /usr/local/bin
+  sudo cp ./bin/facedetect /usr/local/bin
+
+or create a softlink ::
+  sudo ln -s "$(pwd)/bin/facedetect" /usr/local/bin
 
 
-Development status and ideas
-----------------------------
+Development status and ideas (Follows the original explanation by wavexx)
+-------------------------------------------------------------------------
 
 Currently `facedetect` is not much beyond a simple wrapper over the Haar
 Cascade classifier of OpenCV and the ``frontalface_alt2`` profile, which
@@ -185,16 +193,17 @@ deviates from the original intention of unsupervised search.
 Authors and Copyright
 ---------------------
 
-`facedetect` can be found at https://www.thregr.org/~wavexx/software/facedetect/
+The original `facedetect` can be found at https://www.thregr.org/~wavexx/software/facedetect/
 
 | `facedetect` is distributed under GPLv2+ (see COPYING) WITHOUT ANY WARRANTY.
 | Copyright(c) 2013-2017 by wave++ "Yuri D'Elia" <wavexx@thregr.org>.
 
 facedetect's GIT repository is publicly accessible at::
 
-  git://src.thregr.org/facedetect
+  git://src.thregr.org/facedetect (by wavexx)
 
-or at https://github.com/wavexx/facedetect
+or at https://github.com/wavexx/facedetect (by wavexx)
+and at https://github.com/picovico/facedetect-py (by picovico)
 
 
 .. _ImageMagick: http://www.imagemagick.org

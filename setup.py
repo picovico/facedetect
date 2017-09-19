@@ -40,11 +40,11 @@ setup(
     long_description=long_description,
 
     # The project's main homepage.
-    url='https://github.com/picovico/facedetectpy',
+    url='https://github.com/picovico/facedetect-py',
 
     # Author details
-    author='Picovico, wave++',
-    author_email='info@picovico.com, <wavexx@thergr.org>',
+    author='Picovico (originally authored by wave++)',
+    author_email='info@picovico.com',
 
     # Choose your license
     license='MIT',

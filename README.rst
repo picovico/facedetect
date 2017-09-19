@@ -12,6 +12,11 @@ detection algorithm over time.
 `facedetect` is used in software such as fgallery_ to improve the thumbnail
 cutting region, so that faces are always centered.
 
+Installing from PyPi
+--------------------
+  
+  $ pip install facedetect-py
+
 
 Basic Usage
 -----------

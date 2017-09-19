@@ -202,7 +202,7 @@ facedetect's GIT repository is publicly accessible at::
 
   git://src.thregr.org/facedetect (by wavexx)
 
-or at https://github.com/wavexx/facedetect (by wavexx)
+or at https://github.com/wavexx/facedetect (by wavexx)  
 and at https://github.com/picovico/facedetect-py (by picovico)
 
 
